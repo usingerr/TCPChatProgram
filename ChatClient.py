@@ -11,7 +11,7 @@ Client
 """
 
 import socket
-serverName = '10.200.27.215'
+serverName = '127.0.0.1'
 serverPort = 9999
 
 sentence = input('Input lowercase sentence:')
@@ -20,6 +20,6 @@ while (sentence!='exit'):
     clientSocket.connect((serverName,serverPort))
     clientSocket.send(sentence.encode())
     modifiedSentence = clientSocket.recv(1024)
-    print ('From Server:', modifiedSentence.decode())
+    print ('Server says:', modifiedSentence.decode())
     clientSocket.close()
     sentence = input('Input lowercase sentence:')
