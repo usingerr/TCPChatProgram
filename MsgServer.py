@@ -53,3 +53,7 @@ class MyClientHandler(socketserver.BaseRequestHandler):
 
 msgServer = socketserver.ThreadingTCPServer(myAddress, MyClientHandler);
 msgServer.serve_forever();
+
+def makeMessage(nickName, message):
+    appendMessage = nickName + ' ' + now() + '> ' + message
+    return appendMessage

@@ -14,7 +14,8 @@ import socket
 serverName = '127.0.0.1'
 serverPort = 9999
 
-sentence = input('Input lowercase sentence:')
+
+
 while (sentence!='exit'):
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName,serverPort))
