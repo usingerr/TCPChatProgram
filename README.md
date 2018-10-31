@@ -15,4 +15,5 @@ Clients in rooms together can send messages that the server will receive, append
 If a client doesn’t send a message for some amount of time, or they explicitly leave (maybe a command like “!leave”?) then their connection is closed and their IP is taken off any lists that it’s part of
 
 ideas
+
 Command for changing room name? Nickname? 
