@@ -3,6 +3,10 @@
 Created on Tue Oct 30 21:54:43 2018
 
 @author: scalesen
+Network Programming Fall 2018
+Final Project - Chat Program
+Ross Usinger, Nick Scalese
+Server
 """
 
 import socketserver, time;
@@ -16,48 +20,50 @@ class MyClientHandler(socketserver.BaseRequestHandler):
         print (self.client_address, now());   
         firstConnect = True;
         while True:                             
-            data = self.request.recv(1024).decode();
         
             if firstConnect:
+                self.request.send(("Hello " + str(self.client_address) + "! Here is a list of current commands and chatrooms!").encode());
                 self.request.send(helpChatroom().encode());
-                self.request.send(listChatroom().encode());    
+                self.request.send(("\n" + listChatroom()).encode());    
                 firstConnect = False;
             
-            currChatroom = getChatroom(self.client_address);
-            currRoom = chatrooms[currChatroom]['room'];
-            currClient = getClient(self.client_address);
-            if data.startsWith('!'):
-                if data == '!help':
-                    self.request.send(helpChatroom().encode());
-                elif data == '!list':
-                    self.request.send(listChatroom().encode());
-                elif data == '!leave':
-                    poppedClient = leaveChatroom(currClient, currChatroom);
-                    for client in currRoom:
-                        client['req'].send(('User ' + poppedClient['nickname'] + ' has left the chatroom.').encode());
-                    break;
-                elif data == '!new':
-                    chatrooms.append({"name": data[5:], "room": [{"addr": self.client_address, "req": self.request, "nickname": self.client_address}]});
-                elif data == '!join':
-                    if(checkRoomExists(data[6:])):
-                        chatrooms[data[6:]['room']].append({"addr": self.client_address, "req": self.request, "nickname": self.client_address});
+            data = self.request.recv(1024).decode();
+            if data:
+                currChatroom = getChatroom(self.client_address);
+                if currChatroom:
+                    currRoom = chatrooms[currChatroom]['room'];
+                currClient = getClient(self.client_address);
+                if data.startsWith('!'):
+                    if data == '!help':
+                        self.request.send(helpChatroom().encode());
+                    elif data == '!list':
+                        self.request.send(listChatroom().encode());
+                    elif data == '!leave':
+                        poppedClient = leaveChatroom(currClient, currChatroom);
+                        for client in currRoom:
+                            client['req'].send(('User ' + poppedClient['nickname'] + ' has left the chatroom.').encode());
+                        break;
+                    elif data == '!new':
+                        chatrooms.append({"name": data[5:], "room": [{"addr": self.client_address, "req": self.request, "nickname": self.client_address}]});
+                    elif data == '!join':
+                        if(checkRoomExists(data[6:])):
+                            chatrooms[data[6:]['room']].append({"addr": self.client_address, "req": self.request, "nickname": self.client_address});
+                            if(currChatroom):
+                                leaveChatroom(currClient, currChatroom);
+                        else:
+                            self.request.send(('The room "' + data[6:] + '" does not exist.').encode());
+                    elif data == '!nick':
+                        currClient['nickname'] = data[6:];
                     else:
-                        self.request.send(('The room "' + data[6:] + '" does not exist.').encode());
-                elif data == '!nick':
-                    currClient['nickname'] = data[6:];
+                        self.request.send(('"' + data + '" is not a recognized command.').encode());
+                        
                 else:
-                    self.request.send(('"' + data + '" is not a recognized command.').encode());
-                    
-            else:
-                for client in currRoom:
-                    if client == currClient:
-                        continue
-                    client['req'].send(makeMessage(currClient['nickname'], data).encode());
+                    for client in currRoom:
+                        if client == currClient:
+                            continue
+                        client['req'].send(makeMessage(currClient['nickname'], data).encode());
         
         self.request.close();
-
-msgServer = socketserver.ThreadingTCPServer(myAddress, MyClientHandler);
-msgServer.serve_forever();
 
 def now():
     return time.ctime(time.time());
@@ -105,7 +111,9 @@ def checkRoomExists(name):
             return True;
     return False
 
-
 def makeMessage(nickName, message):
     appendMessage = nickName + ' ' + now() + '> ' + message
     return appendMessage
+
+msgServer = socketserver.ThreadingTCPServer(myAddress, MyClientHandler);
+msgServer.serve_forever();
