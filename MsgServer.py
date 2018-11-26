@@ -39,7 +39,7 @@ class MyClientHandler(socketserver.BaseRequestHandler):
                 
                 data = self.request.recv(1024).decode();
                 if data:
-                    currChatroom = getCurrChatroom(self.client_address); #currChatroom is the index of the current room
+                    currChatroom = getCurrChatroom(self.client_address); #currChatroom is the current room object
                     
                     data = data.strip();
                     
@@ -91,10 +91,13 @@ class MyClientHandler(socketserver.BaseRequestHandler):
                             self.request.send(('"' + data + '" is not a recognized command.').encode());
                             
                     else:
-                        for client in currChatroom['room']:
-                            if client == thisClient:
-                                continue;
-                            client['req'].send(makeMessage(thisClient['nickname'], data).encode());
+                        if currChatroom:
+                            for client in currChatroom['room']:
+                                if client == thisClient:
+                                    continue;
+                                client['req'].send(makeMessage(thisClient['nickname'], data).encode());
+                        else:
+                            self.request.send(('\nYou must join a chatroom before you start to send messages').encode());
             except select.error:
                 currChatroom = getCurrChatroom(self.client_address);
                 if currChatroom:
