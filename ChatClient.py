@@ -16,15 +16,14 @@ import _thread;
 
 serverName = '127.0.0.1'
 serverPort = 3333
-unexpected_disconnect = False;
+unexpectedDisconnect = False;
+isConnected = True;
 
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
 
 def receiveMessage(connection):
     while True:
-        if unexpected_disconnect:
-                break;
         try:
             r, w, x = select.select((connection,), (connection,), (), 0);
             message = connection.recv(1024).decode();
@@ -37,15 +36,13 @@ def receiveMessage(connection):
     
 def dispatcher():                                # listen until process killed
     _thread.start_new(receiveMessage, (clientSocket,));
-    message = input("ME: ");
+    message = '';
     while(message != "!leave"):
         try:
             r, w, x = select.select((clientSocket,), (clientSocket,), (), 0);
-            clientSocket.send(message.encode());
             message = input("ME: ");
+            clientSocket.send(message.encode());
         except select.error:
-            global unexpected_disconnect;
-            unexpected_disconnect = True;
             break;
         
 dispatcher();
@@ -53,11 +50,4 @@ print("\nThe session has ended.")
 
 #If the client opts to leave on it's own, then wait for the server to close its socket.
 #Otherwise, just close the socket from the get go.
-if not unexpected_disconnect:
-    while True:
-        try:
-            r, w, x = select.select((clientSocket,), (clientSocket,), (), 0);
-        except select.error:
-            clientSocket.close();
-else:
-    clientSocket.close();
+clientSocket.close();

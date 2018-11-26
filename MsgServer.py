@@ -12,7 +12,12 @@ Server
 import socketserver, time, select;
 
 chatrooms = [{'name': 'default', 'room': []}];
-cmdList = [{'name': '!list', 'desc': 'list all available chatrooms'}, {'name': '!help', 'desc': 'list all commands'}, {'name': '!leave', 'desc': 'leave your current chatroom'}, {'name': '!new', 'desc': 'create a new chatroom'}, {'name': '!join', 'desc': 'join an existing chatroom'}, {'name': '!nick', 'desc': 'change your nickname; use !nick [newNickName]'}]
+cmdList = [{'name': '!list', 'desc': 'list all available chatrooms'}, 
+           {'name': '!help', 'desc': 'list all commands'}, 
+           {'name': '!leave', 'desc': 'disconnect from the server'}, 
+           {'name': '!new', 'desc': 'create a new chatroom'}, 
+           {'name': '!join', 'desc': 'join an existing chatroom'}, 
+           {'name': '!nick', 'desc': 'change your nickname; use !nick [newNickName]'}]
 
 myAddress = ('', 3333);
 
@@ -25,23 +30,19 @@ class MyClientHandler(socketserver.BaseRequestHandler):
             try:
                 r, w, x = select.select((self.request,), (self.request,), (), 0); 
                 
-                if not r and not w:
-                    currChatroom = getCurrChatroom(self.client_address);
-                    if currChatroom:
-                        leaveChatroom(thisClient, currChatroom);
-                    break;                
-            
                 if firstConnect:
                     self.request.send(('Hello ' + str(self.client_address[0]) + '! Here is a list of current commands and chatrooms!').encode());
                     self.request.send(helpChatroom().encode());
-                    self.request.send(("\n\n" + listChatroom()).encode());   
+                    self.request.send((listChatroom()).encode());   
                     self.request.send(("\n\n" + 'Choose a chatroom to join, or make your own!').encode());
                     firstConnect = False;
                 
                 data = self.request.recv(1024).decode();
                 if data:
                     currChatroom = getCurrChatroom(self.client_address); #currChatroom is the index of the current room
-                        
+                    
+                    data = data.strip();
+                    
                     if data.startswith('!'):
                         if data == '!help':
                             self.request.send(helpChatroom().encode());
@@ -52,7 +53,6 @@ class MyClientHandler(socketserver.BaseRequestHandler):
                         elif data == '!leave':
                             if currChatroom:
                                 leaveChatroom(thisClient, currChatroom);
-                            print (self.client_address, now() + " has disconnected."); 
                             break;
                             
                         elif data[0:4] == '!new':
@@ -83,7 +83,7 @@ class MyClientHandler(socketserver.BaseRequestHandler):
                             thisClient['nickname'] = data[6:];
                             if currChatroom:
                                 for client in currChatroom['room']:
-                                    client['req'].send(('\n-----Client ' + oldNick +  'has changed their name to ' + thisClient['nickname'] + '-----').encode());
+                                    client['req'].send(('\n-----Client ' + oldNick +  ' has changed their name to ' + thisClient['nickname'] + '-----').encode());
                             else:
                                 self.request.send(('Your nickname has been changed to ' + data[6:] + '.').encode());
                             
@@ -96,6 +96,9 @@ class MyClientHandler(socketserver.BaseRequestHandler):
                                 continue;
                             client['req'].send(makeMessage(thisClient['nickname'], data).encode());
             except select.error:
+                currChatroom = getCurrChatroom(self.client_address);
+                if currChatroom:
+                    leaveChatroom(thisClient, currChatroom);
                 break;
         
         self.request.close();
@@ -118,7 +121,7 @@ def getChatroomByName(name):
     return [];
             
 def listChatroom():
-    strChatrooms = 'The current chatrooms are:'
+    strChatrooms = '\nThe current chatrooms are:'
     for chatroom in range(0, len(chatrooms)):
         strChatrooms += '\n' + str(chatroom) + '. ' + chatrooms[chatroom]['name'];
         
@@ -138,7 +141,7 @@ def leaveChatroom(currClient, currChatroom):
         client['req'].send(('\n-----Client ' + currClient['nickname'] + ' has left the chatroom-----').encode());
         
 def helpChatroom():
-    strCommands = 'The current commands are:';
+    strCommands = '\nThe current commands are:';
     for cmd in cmdList:
         strCommands += '\n' + cmd['name'] + ': ' + cmd['desc'];
     return strCommands;
