@@ -13,6 +13,7 @@ import socketserver, time, select;
 
 chatrooms = [{'name': 'default', 'room': []}];
 cmdList = [{'name': '!list', 'desc': 'list all available chatrooms'}, {'name': '!help', 'desc': 'list all commands'}, {'name': '!leave', 'desc': 'leave your current chatroom'}, {'name': '!new', 'desc': 'create a new chatroom'}, {'name': '!join', 'desc': 'join an existing chatroom'}, {'name': '!nick', 'desc': 'change your nickname; use !nick [newNickName]'}]
+
 myAddress = ('', 3333);
 
 class MyClientHandler(socketserver.BaseRequestHandler):
